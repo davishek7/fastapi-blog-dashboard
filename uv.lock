@@ -74,7 +74,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
-    { name = "pymongo", specifier = ">=4.13.2" },
+    { name = "pymongo", extras = ["srv"], specifier = ">=4.13.2" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "python-slugify", specifier = ">=8.0.4" },
     { name = "uvicorn", specifier = ">=0.35.0" },
