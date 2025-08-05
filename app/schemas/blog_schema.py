@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List
-from datetime import datetime, timezone 
+from datetime import datetime, timezone
 
 
 class BlogCreateSchema(BaseModel):

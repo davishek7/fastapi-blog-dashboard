@@ -1,5 +1,4 @@
 from fastapi import status
-from fastapi.responses import JSONResponse
 from ..schemas.blog_schema import BlogCreateSchema
 from ..utils.blog import serialize_blog
 from slugify import slugify  # type: ignore
@@ -28,9 +27,14 @@ class BlogService:
         )
 
     async def get_all(self, limit: int, offset: int):
-        await asyncio.sleep(3) 
+        await asyncio.sleep(3)
         total = await self.collection.count_documents({})
-        cursor = self.collection.find().sort("created_at", DESCENDING).skip(offset).limit(limit)
+        cursor = (
+            self.collection.find()
+            .sort("created_at", DESCENDING)
+            .skip(offset)
+            .limit(limit)
+        )
         blogs = []
         async for blog in cursor:
             blogs.append(serialize_blog(blog))
