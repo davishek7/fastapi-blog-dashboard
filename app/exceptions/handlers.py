@@ -1,6 +1,7 @@
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError, HTTPException
-from ..utils.response import error_response
+from pymongo.errors import DuplicateKeyError
+from ..utils.responses import error_response
 from .custom_exception import AppException
 
 
@@ -33,4 +34,10 @@ def register_exception_handlers(app):
         print(f"Unhandled error: {exc}")  # Optional: log or notify
         return error_response(
             "Internal server error", status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    @app.exception_handler(DuplicateKeyError)
+    async def handle_duplicate_key_error(request: Request, exc: DuplicateKeyError):
+        return error_response(
+            "Email or username already exists", status.HTTP_400_BAD_REQUEST
         )

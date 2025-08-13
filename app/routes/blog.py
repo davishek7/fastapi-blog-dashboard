@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Query, Depends
-from ..schemas.blog_schema import BlogCreateSchema
 from ..configs.dependency import get_blog_service
 
 
@@ -18,10 +17,3 @@ async def post_list(
 @router.get("/{slug}")
 async def get_post(slug: str, blog_service=Depends(get_blog_service)):
     return await blog_service.get(slug)
-
-
-@router.post("/")
-async def post_create(
-    blog_create_schema: BlogCreateSchema, blog_service=Depends(get_blog_service)
-):
-    return await blog_service.create(blog_create_schema)

@@ -1,0 +1,7 @@
+{% extends 'email/base.html' %}
+{% block content %}
+<td style="padding: 20px; background-color: #ffffff; font-size: 16px; line-height: 1.6;">
+    <p><strong>{{ full_name }}</strong> sent you a message:</p>
+    <p>{{ message_text }}</p>
+</td>
+{% endblock %}

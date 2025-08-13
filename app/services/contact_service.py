@@ -1,9 +1,10 @@
 from fastapi import status
 from ..schemas.contact_schema import ContactCreateSchema
-from ..utils.contact import serialize_contact
+from ..utils.serializers import serialize_contact
 from bson import ObjectId
-from ..exceptions.custom_exception import AppException
-from ..utils.response import success_response
+from ..utils.responses import success_response
+from ..utils.shortcuts import get_object_or_404
+from ..signals.send_email_signal import send_email_signal
 
 
 class ContactService:
@@ -13,6 +14,18 @@ class ContactService:
     async def create(self, contact_create_schema: ContactCreateSchema):
         contact = contact_create_schema.model_dump()
         result = await self.collection.insert_one(contact)
+        send_email_signal.send(
+            "services.contact_service",
+            subject=contact["subject"],
+            recipients=[contact["email"]],
+            template_name="email/contact_created.html",
+            context={
+                "subject": contact["subject"],
+                "title": "You have a new contact message",
+                "full_name": contact["full_name"],
+                "message_text": contact["message"],
+            },
+        )
         return success_response(
             "Message sent successfully",
             status.HTTP_201_CREATED,
@@ -31,11 +44,23 @@ class ContactService:
         )
 
     async def get(self, contact_id: str):
-        contact = await self.collection.find_one({"_id": ObjectId(contact_id)})
-        if not contact:
-            raise AppException("Contact not found", status.HTTP_404_NOT_FOUND)
+        contact = await get_object_or_404(
+            self.collection, "_id", ObjectId(contact_id), "Contact"
+        )
         return success_response(
             "Contact fetched successfully",
             status.HTTP_200_OK,
             data=serialize_contact(contact),
         )
+
+    async def update(self, contact_id: str):
+        await get_object_or_404(self.collection, "_id", ObjectId(contact_id), "Contact")
+        await self.collection.update_one(
+            {"_id": ObjectId(contact_id)}, {"$set": {"read_status": True}}
+        )
+        return success_response("Contact updated successfully", status.HTTP_200_OK)
+
+    async def delete(self, contact_id: str):
+        await get_object_or_404(self.collection, "_id", ObjectId(contact_id), "Contact")
+        await self.collection.delete_one({"_id": ObjectId(contact_id)})
+        return success_response("Contact deleted successfully", status.HTTP_200_OK)

@@ -1,10 +1,11 @@
 from fastapi import status
-from ..schemas.blog_schema import BlogCreateSchema
-from ..utils.blog import serialize_blog
+from ..schemas.blog_schema import BlogCreateSchema, BlogUpdateSchema
+from ..utils.serializers import serialize_blog
 from slugify import slugify  # type: ignore
-from ..utils.response import success_response
-from ..exceptions.custom_exception import AppException
+from ..utils.responses import success_response
+from ..utils.shortcuts import get_object_or_404
 from pymongo import DESCENDING
+from bson import ObjectId
 import asyncio
 
 
@@ -51,9 +52,19 @@ class BlogService:
         )
 
     async def get(self, slug: str):
-        blog = await self.collection.find_one({"slug": slug})
-        if not blog:
-            raise AppException("Post not found", status.HTTP_404_NOT_FOUND)
+        blog = await get_object_or_404(self.collection, "slug", slug, "Post")
         return success_response(
             "Post fetched successfully", status.HTTP_200_OK, data=serialize_blog(blog)
         )
+
+    async def update(self, blog_id: str, blog_update_schema: BlogUpdateSchema):
+        await get_object_or_404(self.collection, "_id", ObjectId(blog_id), "Post")
+        await self.collection.update_one(
+            {"_id": ObjectId(blog_id)}, {"$set": blog_update_schema.model_dump()}
+        )
+        return success_response("Post updated successfully", status.HTTP_200_OK)
+
+    async def delete(self, blog_id: str):
+        await get_object_or_404(self.collection, "_id", ObjectId(blog_id), "Post")
+        await self.collection.delete_one({"_id": ObjectId(blog_id)})
+        return success_response("Post deleted successfully", status.HTTP_200_OK)

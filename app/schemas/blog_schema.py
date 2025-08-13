@@ -3,11 +3,14 @@ from typing import List
 from datetime import datetime, timezone
 
 
-class BlogCreateSchema(BaseModel):
+class BlogUpdateSchema(BaseModel):
     title: str
     subtitle: str
     author: str
     content: str
+
+
+class BlogCreateSchema(BlogUpdateSchema):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
