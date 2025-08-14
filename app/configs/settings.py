@@ -28,9 +28,9 @@ class GeneralSettings(BaseSettings):
     VERIFICATION_TOKEN_EXPIRE_TIMEDELTA: str = os.environ.get(
         "VERIFICATION_TOKEN_EXPIRE_TIMEDELTA"
     )
-    RESUME_URL: HttpUrl = os.environ.get("RESUME_URL")
-    BLOG_APP_URL: HttpUrl = os.environ.get("BLOG_APP_URL")
-    RESUME_APP_URL: HttpUrl = os.environ.get("RESUME_APP_URL")
+    RESUME_URL: str = os.environ.get("RESUME_URL")
+    BLOG_APP_URL: str = os.environ.get("BLOG_APP_URL")
+    RESUME_APP_URL: str = os.environ.get("RESUME_APP_URL")
     ALLOW_REGISTRATION: str = os.environ.get("ALLOW_REGISTRATION")
 
 
