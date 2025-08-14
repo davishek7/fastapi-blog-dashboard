@@ -16,14 +16,14 @@ class ContactService:
         result = await self.collection.insert_one(contact)
         send_email_signal.send(
             "services.contact_service",
-            subject=contact["subject"],
+            subject="Thank You for Reaching Out",
             recipients=[contact["email"]],
             template_name="email/contact_created.html",
             context={
-                "subject": contact["subject"],
-                "title": "You have a new contact message",
+                "subject": "Thank You for Reaching Out",
+                "title": "Thank You for Reaching Out",
                 "full_name": contact["full_name"],
-                "message_text": contact["message"],
+                "message_text": f"""Hi {contact["full_name"]},\n\nThank you for contacting me through my {contact["from_app"][:-4]} website.\nI’ve received your message and will get back to you as soon as possible.\nLooking forward to connecting with you.\n\nBest regards,\nAvishek Das""",
             },
         )
         return success_response(

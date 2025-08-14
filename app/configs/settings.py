@@ -1,5 +1,4 @@
 import os
-from pydantic import HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,7 +11,7 @@ class EmailSettings(BaseSettings):
     MAIL_USERNAME: str = os.environ.get("MAIL_USERNAME")  # "dasavishek1995@gmail.com"
     MAIL_PASSWORD: str = os.environ.get("MAIL_PASSWORD")  # "agtiqxmbezkulvxs"
     MAIL_FROM: str = os.environ.get("MAIL_FROM")
-    MAIL_PORT: int =  os.environ.get("MAIL_PORT")# 587
+    MAIL_PORT: int = os.environ.get("MAIL_PORT")  # 587
     MAIL_SERVER: str = os.environ.get("MAIL_SERVER")  # "smtp.gmail.com"
     MAIL_FROM_NAME: str = os.environ.get("MAIL_FROM_NAME")
     MAIL_STARTTLS: bool = os.environ.get("MAIL_STARTTLS")

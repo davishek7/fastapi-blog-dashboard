@@ -29,10 +29,3 @@ class ForgotPasswordSchema(BaseModel):
 
 class ResetPasswordSchema(BaseModel):
     new_password: str
-
-
-# class TokenCreateSchema(BaseModel):
-#     token: str
-#     token:
-#     expires_at: datetime
-#     used: bool = Field(default=False)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Security
 from typing import List
 from ...configs.dependency import get_contact_service
-from ...schemas.contact_schema import Contact, ContactUpdateSchema
+from ...schemas.contact_schema import Contact
 from fastapi_jwt import JwtAuthorizationCredentials
 from ...utils.auth import access_security
 
@@ -29,11 +29,10 @@ async def get_contact(
 @router.patch("/{contact_id}")
 async def update_contact(
     contact_id: str,
-    contact_update_schema: ContactUpdateSchema,
     contact_service=Depends(get_contact_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
-    return await contact_service.update(contact_id, contact_update_schema)
+    return await contact_service.update(contact_id)
 
 
 @router.delete("/{contact_id}")

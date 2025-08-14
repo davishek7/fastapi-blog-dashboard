@@ -28,8 +28,12 @@ app = FastAPI(
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-origins = [settings.BLOG_APP_URL, settings.RESUME_APP_URL, "http://localhost:5173"]
-print(origins)
+origins = [
+    settings.BLOG_APP_URL,
+    settings.RESUME_APP_URL,
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
 
 app.add_middleware(
     CORSMiddleware,
