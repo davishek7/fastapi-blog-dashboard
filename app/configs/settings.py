@@ -8,11 +8,11 @@ class DataBaseSettings(BaseSettings):
 
 
 class EmailSettings(BaseSettings):
-    MAIL_USERNAME: str = os.environ.get("MAIL_USERNAME")  # "dasavishek1995@gmail.com"
-    MAIL_PASSWORD: str = os.environ.get("MAIL_PASSWORD")  # "agtiqxmbezkulvxs"
+    MAIL_USERNAME: str = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD: str = os.environ.get("MAIL_PASSWORD")
     MAIL_FROM: str = os.environ.get("MAIL_FROM")
-    MAIL_PORT: int = os.environ.get("MAIL_PORT")  # 587
-    MAIL_SERVER: str = os.environ.get("MAIL_SERVER")  # "smtp.gmail.com"
+    MAIL_PORT: int = os.environ.get("MAIL_PORT")
+    MAIL_SERVER: str = os.environ.get("MAIL_SERVER")
     MAIL_FROM_NAME: str = os.environ.get("MAIL_FROM_NAME")
     MAIL_STARTTLS: bool = os.environ.get("MAIL_STARTTLS")
     MAIL_SSL_TLS: bool = os.environ.get("MAIL_SSL_TLS")
@@ -30,6 +30,7 @@ class GeneralSettings(BaseSettings):
     RESUME_URL: str = os.environ.get("RESUME_URL")
     BLOG_APP_URL: str = os.environ.get("BLOG_APP_URL")
     RESUME_APP_URL: str = os.environ.get("RESUME_APP_URL")
+    DASHBOARD_APP_URL: str = os.environ.get("DASHBOARD_APP_URL")
     ALLOW_REGISTRATION: str = os.environ.get("ALLOW_REGISTRATION")
 
 

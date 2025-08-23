@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Security
 from ..schemas.auth_schema import (
     LoginSchema,
     ResgisterSchema,
     ForgotPasswordSchema,
     ResetPasswordSchema,
+    EmailVerificationSchema,
 )
 from ..configs.dependency import (
     get_auth_service,
@@ -11,6 +12,8 @@ from ..configs.dependency import (
     get_password_reset_token_service,
 )
 from ..configs.settings import settings
+from fastapi_jwt import JwtAuthorizationCredentials
+from ..utils.auth import access_security
 
 
 router = APIRouter()
@@ -41,6 +44,16 @@ if int(settings.ALLOW_REGISTRATION) == 1:
     ):
         return await auth_service.verify_email(token, email_verification_token_service)
 
+    @router.post("/resend-verification")
+    async def resend_verification_email(
+        email_verification_schema: EmailVerificationSchema,
+        email_verification_token_service=Depends(get_email_verification_token_service),
+        auth_service=Depends(get_auth_service),
+    ):
+        return await auth_service.resend_verification_email(
+            email_verification_schema, email_verification_token_service
+        )
+
 
 @router.post("/forgot-password")
 async def forgot_password(
@@ -63,3 +76,12 @@ async def reset_password(
     return await auth_service.reset_password(
         token, reset_password_schema, password_reset_token_service
     )
+
+
+@router.get("/profile")
+async def user_profile(
+    credentials: JwtAuthorizationCredentials = Security(access_security),
+    auth_service=Depends(get_auth_service),
+):
+    user_id = credentials["user_id"]
+    return await auth_service.profile(user_id)

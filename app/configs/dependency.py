@@ -28,9 +28,6 @@ async def get_auth_service() -> AuthService:
 
 async def get_email_verification_token_service() -> TokenService:
     db = get_db()
-    await db["email_verification_token"].create_index(
-        "expires_at", expireAfterSeconds=0
-    )
     return TokenService(db["email_verification_token"])
 
 

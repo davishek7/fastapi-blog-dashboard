@@ -5,6 +5,7 @@ from bson import ObjectId
 from ..utils.responses import success_response
 from ..utils.shortcuts import get_object_or_404
 from ..signals.send_email_signal import send_email_signal
+from pymongo import DESCENDING
 
 
 class ContactService:
@@ -32,15 +33,27 @@ class ContactService:
             data={"contact_id": str(result.inserted_id)},
         )
 
-    async def get_all(self):
-        cursor = self.collection.find()
+    async def get_all(self, limit: int, offset: int):
+        total = await self.collection.count_documents({})
+        cursor = (
+            self.collection.find()
+            .sort("created_at", DESCENDING)
+            .skip(offset)
+            .limit(limit)
+        )
         contacts = []
         async for doc in cursor:
             contacts.append(serialize_contact(doc))
         if not contacts:
-            return success_response("No contacts found", status.HTTP_200_OK, data=[])
+            return success_response(
+                "No contacts found",
+                status.HTTP_200_OK,
+                {"contacts": [], "limit": limit, "offset": offset, "total": total},
+            )
         return success_response(
-            "Contacts fetched successfully", status.HTTP_200_OK, data=contacts
+            "Contacts fetched successfully",
+            status.HTTP_200_OK,
+            {"contacts": contacts, "limit": limit, "offset": offset, "total": total},
         )
 
     async def get(self, contact_id: str):

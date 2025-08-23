@@ -1,17 +1,20 @@
 from fastapi import status
 from pydantic import EmailStr
+from bson import ObjectId
 from ..exceptions.custom_exception import AppException
 from ..schemas.auth_schema import (
     LoginSchema,
     ResgisterSchema,
     ForgotPasswordSchema,
     ResetPasswordSchema,
+    EmailVerificationSchema,
 )
 from ..utils.responses import success_response
 from ..utils.auth import hash_password, verify_password, generate_access_token
-from ..utils.serializers import serialize_access_token
+from ..utils.serializers import serialize_access_token, serialize_user
 from ..signals.send_email_signal import send_email_signal
 from ..services.token_service import TokenService
+from ..configs.settings import settings
 
 
 class AuthService:
@@ -24,21 +27,27 @@ class AuthService:
             raise AppException(
                 "Invalid email or password!", status.HTTP_401_UNAUTHORIZED
             )
+        if user and not user["is_active"]:
+            raise AppException(
+                "Please verify your email first.", status.HTTP_403_FORBIDDEN
+            )
 
-        subject = {
-            "username": user["username"],
-            "email": user["email"],
+        sub = {
+            "user_id": str(user["_id"]),
             "role": user["role"],
         }
-        return generate_access_token(subject)
+        return {
+            "user": serialize_user(user),
+            "token": serialize_access_token(generate_access_token(sub)),
+        }
 
     async def user_login(self, login_schema: LoginSchema):
         login_data = login_schema.model_dump()
-        token = await self.authenticate_user(
+        user_with_token = await self.authenticate_user(
             login_data["email"], login_data["password"]
         )
         return success_response(
-            "Login successful!", status.HTTP_200_OK, serialize_access_token(token)
+            "Login successful!", status.HTTP_200_OK, user_with_token
         )
 
     async def user_register(
@@ -54,20 +63,9 @@ class AuthService:
             created_user["_id"]
         )
         verification_link = (
-            f"http://127.0.0.1:8000/api/auth/verify-email?token={raw_token}"
+            f"{settings.DASHBOARD_APP_URL}/auth/verify-email?token={raw_token}"
         )
-        send_email_signal.send(
-            "services.auth_service",
-            subject="Please confirm your email address",
-            recipients=[created_user["email"]],
-            template_name="email/email_verification.html",
-            context={
-                "subject": "Please confirm your email address",
-                "title": "Please confirm your email address",
-                "full_name": created_user["username"],
-                "verification_url": verification_link,
-            },
-        )
+        self.send_action_email(created_user, verification_link, "verify_account")
         return success_response(
             "Account created successfully. Please check your email to verify your account.",
             status.HTTP_201_CREATED,
@@ -76,12 +74,39 @@ class AuthService:
     async def verify_email(
         self, token: str, email_verification_token_service: TokenService
     ):
-        token_data = await email_verification_token_service.validate_token(token)
+        token_data = await email_verification_token_service.decode_token(token)
+        user = await self.collection.find_one({"_id": token_data["user_id"]})
+        if not user:
+            raise AppException("User not found.", status.HTTP_404_NOT_FOUND)
+        if user["is_active"]:
+            raise AppException(
+                "Your email is already verified. Please log in.",
+                status.HTTP_208_ALREADY_REPORTED,
+            )
+        record = await email_verification_token_service.validate_token(token)
         await self.collection.update_one(
-            {"_id": token_data["user_id"]}, {"$set": {"is_active": True}}
+            {"_id": user["_id"]}, {"$set": {"is_active": True}}
         )
         await email_verification_token_service.mark_token_used(token)
         return success_response("Email verified successfully.", status.HTTP_200_OK)
+
+    async def resend_verification_email(
+        self,
+        email_verification_schema: EmailVerificationSchema,
+        email_verification_token_service: TokenService,
+    ):
+        email = email_verification_schema.model_dump()["email"]
+        user = await self.collection.find_one({"email": email})
+        if user and not user["is_active"]:
+            raw_token = await email_verification_token_service.create_token(user["_id"])
+            verification_link = (
+                f"{settings.DASHBOARD_APP_URL}/auth/verify-email?token={raw_token}"
+            )
+            self.send_action_email(user, verification_link, "verify_account")
+        return success_response(
+            "If an account exists with that email, a verification link has been sent.",
+            status.HTTP_200_OK,
+        )
 
     async def forgot_password(
         self,
@@ -95,21 +120,9 @@ class AuthService:
             raw_token = await password_reset_token_service.create_token(user["_id"])
 
             reset_link = (
-                f"http://127.0.0.1:8000/api/auth/reset-password?token={raw_token}"
+                f"{settings.DASHBOARD_APP_URL}/auth/reset-password?token={raw_token}"
             )
-
-            send_email_signal.send(
-                "services.auth_service",
-                subject="Password Reset Request",
-                recipients=[user["email"]],
-                template_name="email/password_reset.html",
-                context={
-                    "subject": "Password Reset Request",
-                    "title": "Password Reset Request",
-                    "full_name": user["username"],
-                    "reset_url": reset_link,
-                },
-            )
+            self.send_action_email(user, reset_link, "password_reset")
         return success_response(
             "If an account exists with that email, a reset link has been sent.",
             status.HTTP_200_OK,
@@ -121,12 +134,48 @@ class AuthService:
         reset_password_schema: ResetPasswordSchema,
         password_reset_token_service: TokenService,
     ):
-        token_data = await password_reset_token_service.validate_token(token)
+        token_data = await password_reset_token_service.decode_token(token)
+        user = self.collection.find_one({"_id": token_data["user_id"]})
+        if not user:
+            raise AppException("User not found.", status.HTTP_404_NOT_FOUND)
+        record = await password_reset_token_service.validate_token(token)
         new_password_hash = hash_password(
             reset_password_schema.model_dump()["new_password"]
         )
         await self.collection.update_one(
-            {"_id": token_data["user_id"]}, {"$set": {"password": new_password_hash}}
+            {"_id": record["user_id"]}, {"$set": {"password": new_password_hash}}
         )
         await password_reset_token_service.mark_token_used(token)
-        return success_response("Password reset successful", status.HTTP_200_OK)
+        return success_response(
+            "Password reset successful. Please login with your new password.",
+            status.HTTP_200_OK,
+        )
+
+    async def profile(self, user_id: str):
+        user = await self.collection.find_one({"_id": ObjectId(user_id)})
+        return success_response(
+            "User Profile fetched successfully",
+            status.HTTP_200_OK,
+            serialize_user(user),
+        )
+
+    def send_action_email(self, user: dict, url_with_token: str, action: str):
+        if action == "verify_account":
+            subject = "Please confirm your email address"
+            template_name = "email/email_verification.html"
+        elif action == "password_reset":
+            subject = "Password Reset Request"
+            template_name = "email/password_reset.html"
+
+        send_email_signal.send(
+            "services.auth_service",
+            subject=subject,
+            recipients=[user["email"]],
+            template_name=template_name,
+            context={
+                "subject": subject,
+                "title": subject,
+                "full_name": user["username"],
+                "url_with_token": url_with_token,
+            },
+        )

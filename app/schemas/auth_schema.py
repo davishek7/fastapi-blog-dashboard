@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime, timezone
 
 
@@ -19,8 +19,13 @@ class AccessToken(BaseModel):
     token_type: str
 
 
-class UserResponse(ResgisterSchema):
-    pass
+class UserResponse(BaseModel):
+    id: str
+    email: EmailStr
+    username: str
+    role: str
+    is_active: bool
+    created_at: datetime
 
 
 class ForgotPasswordSchema(BaseModel):
@@ -29,3 +34,7 @@ class ForgotPasswordSchema(BaseModel):
 
 class ResetPasswordSchema(BaseModel):
     new_password: str
+
+
+class EmailVerificationSchema(ForgotPasswordSchema):
+    pass

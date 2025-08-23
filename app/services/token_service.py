@@ -1,6 +1,6 @@
 import secrets
 import hashlib
-from fastapi import status
+from fastapi import status, Depends
 from datetime import datetime, timedelta, timezone
 from ..configs.settings import settings
 from ..exceptions.custom_exception import AppException
@@ -32,17 +32,29 @@ class TokenService:
         await self.collection.insert_one(token_data)
         return token
 
-    async def validate_token(self, token: str):
+    async def decode_token(self, token: str):
         token_hash = TokenService._generate_token_hash(token)
         record = await self.collection.find_one(
-            {"token_hash": token_hash, "used": False}
+            {"token_hash": token_hash}
         )
-        if not record or record["expires_at"].replace(
-            tzinfo=timezone.utc
-        ) < datetime.now(timezone.utc):
+        if not record:
+            raise AppException(
+                "Invalid or expired verification link.", status.HTTP_404_NOT_FOUND
+            )
+        return record
+
+    async def validate_token(self, token: str):
+        record = await self.decode_token(token)
+        if record["expires_at"].replace(tzinfo=timezone.utc) < datetime.now(
+            timezone.utc
+        ):
             raise AppException(
                 "Verification link has expired. Please request a new one.",
                 status.HTTP_410_GONE,
+            )
+        if record["used"]:
+            raise AppException(
+                "Verification link already used.", status.HTTP_409_CONFLICT
             )
         return record
 

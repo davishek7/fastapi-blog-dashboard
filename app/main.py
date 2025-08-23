@@ -31,6 +31,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 origins = [
     settings.BLOG_APP_URL,
     settings.RESUME_APP_URL,
+    settings.DASHBOARD_APP_URL,
     "http://localhost:5173",
     "http://localhost:5174",
 ]
@@ -57,6 +58,7 @@ async def home_page(request: Request):
             "resume_app_url": settings.RESUME_APP_URL,
             "blog_app_url": settings.BLOG_APP_URL,
             "resume_url": settings.RESUME_URL,
+            "dashboard_app_url": settings.DASHBOARD_APP_URL,
             "api_docs": "/docs",
             "current_year": datetime.now().year,
         },

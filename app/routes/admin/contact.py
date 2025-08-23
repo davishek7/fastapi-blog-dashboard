@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Security, Query
 from typing import List
 from ...configs.dependency import get_contact_service
 from ...schemas.contact_schema import Contact
@@ -11,10 +11,12 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Contact])
 async def contact_list(
+    limit: int = Query(5, gt=0),
+    offset: int = Query(0, ge=0),
     contact_service=Depends(get_contact_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
-    return await contact_service.get_all()
+    return await contact_service.get_all(limit, offset)
 
 
 @router.get("/{contact_id}", response_model=Contact)
