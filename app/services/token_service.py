@@ -34,9 +34,7 @@ class TokenService:
 
     async def decode_token(self, token: str):
         token_hash = TokenService._generate_token_hash(token)
-        record = await self.collection.find_one(
-            {"token_hash": token_hash}
-        )
+        record = await self.collection.find_one({"token_hash": token_hash})
         if not record:
             raise AppException(
                 "Invalid or expired verification link.", status.HTTP_404_NOT_FOUND

@@ -31,7 +31,11 @@ class BlogService:
 
     async def get_all(self, limit: int, offset: int, include_inactive=False):
         # await asyncio.sleep(3)
-        total = await self.collection.count_documents({}) if include_inactive else await self.collection.find_documents({"is_active": True})
+        total = (
+            await self.collection.count_documents({})
+            if include_inactive
+            else await self.collection.count_documents({"is_active": True})
+        )
         pipeline = posts_with_author(
             skip=offset, limit=limit, include_inactive=include_inactive
         )
