@@ -24,6 +24,9 @@ class GeneralSettings(BaseSettings):
     SECRET_KEY: str = os.environ.get("SECRET_KEY")
     TIMEZONE: str = "Asia/Kolkata"
     ACCESS_TOKEN_EXPIRE_TIMEDELTA: str = os.environ.get("ACCESS_TOKEN_EXPIRE_TIMEDELTA")
+    REFRESH_TOKEN_EXPIRE_TIMEDELTA: str = os.environ.get(
+        "REFRESH_TOKEN_EXPIRE_TIMEDELTA"
+    )
     VERIFICATION_TOKEN_EXPIRE_TIMEDELTA: str = os.environ.get(
         "VERIFICATION_TOKEN_EXPIRE_TIMEDELTA"
     )

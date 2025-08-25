@@ -10,7 +10,7 @@ from ..schemas.auth_schema import (
     EmailVerificationSchema,
 )
 from ..utils.responses import success_response
-from ..utils.auth import hash_password, verify_password, generate_access_token
+from ..utils.auth import hash_password, verify_password, generate_auth_tokens
 from ..utils.serializers import serialize_access_token, serialize_user
 from ..signals.send_email_signal import send_email_signal
 from ..services.token_service import TokenService
@@ -38,7 +38,7 @@ class AuthService:
         }
         return {
             "user": serialize_user(user),
-            "token": serialize_access_token(generate_access_token(sub)),
+            "auth_tokens": generate_auth_tokens(sub),
         }
 
     async def user_login(self, login_schema: LoginSchema):
@@ -49,6 +49,9 @@ class AuthService:
         return success_response(
             "Login successful!", status.HTTP_200_OK, user_with_token
         )
+    
+    async def refresh(self, sub):
+        return success_response("Tokens refreshed successfully.", status.HTTP_200_OK, data=generate_auth_tokens(sub))
 
     async def user_register(
         self,
