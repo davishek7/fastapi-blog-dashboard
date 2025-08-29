@@ -11,8 +11,8 @@ class ContactCreateSchema(BaseModel):
     from_app: str
     read_status: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    deleted: bool
-    deleted_at: Optional[datetime] = None
+    deleted: bool = Field(default=False)
+    deleted_at: Optional[datetime] = Field(default=None)
 
 
 class Contact(ContactCreateSchema):
