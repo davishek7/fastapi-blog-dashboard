@@ -6,6 +6,7 @@ from ..utils.responses import success_response
 from ..utils.shortcuts import get_object_or_404
 from ..signals.send_email_signal import send_email_signal
 from pymongo import DESCENDING
+from datetime import datetime, timezone
 
 
 class ContactService:
@@ -34,9 +35,9 @@ class ContactService:
         )
 
     async def get_all(self, limit: int, offset: int):
-        total = await self.collection.count_documents({})
+        total = await self.collection.count_documents({"deleted": False})
         cursor = (
-            self.collection.find()
+            self.collection.find({"deleted": False})
             .sort("created_at", DESCENDING)
             .skip(offset)
             .limit(limit)
@@ -75,5 +76,8 @@ class ContactService:
 
     async def delete(self, contact_id: str):
         await get_object_or_404(self.collection, "_id", ObjectId(contact_id), "Contact")
-        await self.collection.delete_one({"_id": ObjectId(contact_id)})
+        await self.collection.update_one(
+            {"_id": ObjectId(contact_id)},
+            {"$set": {"deleted": True, "deleted_at": datetime.now(timezone.utc)}},
+        )
         return success_response("Contact deleted successfully", status.HTTP_200_OK)

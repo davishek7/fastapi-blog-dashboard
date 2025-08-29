@@ -11,7 +11,7 @@ def posts_with_author(
     pipeline = []
 
     # Match stage
-    match_stage = {}
+    match_stage = {"deleted": False}
     if blog_id:
         match_stage["_id"] = blog_id
     if slug:
@@ -47,6 +47,8 @@ def posts_with_author(
                 "content": 1,
                 "is_active": 1,
                 "created_at": 1,
+                "deleted": 1,
+                "deleted_at": 1,
                 "author._id": 1,
                 "author.username": 1,
                 "author.email": 1,

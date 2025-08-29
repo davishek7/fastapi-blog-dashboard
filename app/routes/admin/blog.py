@@ -24,8 +24,7 @@ async def get_post(
     blog_service=Depends(get_blog_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
-    user_id = credentials["user_id"]
-    return await blog_service.get(slug, user_id)
+    return await blog_service.get(slug, include_inactive=True)
 
 
 @router.post("/")
@@ -38,31 +37,31 @@ async def post_create(
     return await blog_service.create(blog_create_schema, user_id)
 
 
-@router.put("/{blog_id}")
+@router.put("/{slug}")
 async def post_update(
-    blog_id: str,
+    slug: str,
     blog_update_schema: BlogUpdateSchema,
     blog_service=Depends(get_blog_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
     user_id = credentials["user_id"]
-    return await blog_service.update(blog_id, blog_update_schema)
+    return await blog_service.update(slug, blog_update_schema)
 
 
-@router.patch("/{blog_id}")
+@router.patch("/{slug}")
 async def post_status_update(
-    blog_id: str,
+    slug: str,
     blog_service=Depends(get_blog_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
-    return await blog_service.update_status(blog_id)
+    return await blog_service.update_status(slug)
 
 
-@router.delete("/{blog_id}")
+@router.delete("/{slug}")
 async def post_delete(
-    blog_id: str,
+    slug: str,
     blog_service=Depends(get_blog_service),
     credentials: JwtAuthorizationCredentials = Security(access_security),
 ):
     user_id = credentials["user_id"]
-    return await blog_service.delete(blog_id)
+    return await blog_service.delete(slug)

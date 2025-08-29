@@ -23,10 +23,15 @@ router = APIRouter()
 async def login(login_schema: LoginSchema, auth_service=Depends(get_auth_service)):
     return await auth_service.user_login(login_schema)
 
+
 @router.post("/refresh")
-async def refresh(credentials: JwtAuthorizationCredentials = Security(refresh_security), auth_service=Depends(get_auth_service)):
+async def refresh(
+    credentials: JwtAuthorizationCredentials = Security(refresh_security),
+    auth_service=Depends(get_auth_service),
+):
     sub = credentials.subject
     return await auth_service.refresh(sub)
+
 
 if int(settings.ALLOW_REGISTRATION) == 1:
 

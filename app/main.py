@@ -6,7 +6,11 @@ from fastapi.templating import Jinja2Templates
 from datetime import datetime
 from .configs.settings import settings
 from .routes import blog, contact, auth
-from .routes.admin import blog as blog_admin, contact as contact_admin
+from .routes.admin import (
+    blog as blog_admin,
+    contact as contact_admin,
+    trash as trash_admin,
+)
 from .configs.database import lifespan
 from .exceptions.handlers import register_exception_handlers
 
@@ -86,4 +90,8 @@ app.include_router(
 )
 app.include_router(
     contact_admin.router, prefix=f"{ADMIN_PREFIX}/contact", tags=["Contact Admin"]
+)
+
+app.include_router(
+    trash_admin.router, prefix=f"{ADMIN_PREFIX}/trash", tags=["Trash Admin"]
 )

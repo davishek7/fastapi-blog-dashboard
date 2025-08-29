@@ -14,9 +14,7 @@ access_security = JwtAccessBearer(
 refresh_security = JwtRefreshBearer(
     settings.SECRET_KEY,
     auto_error=True,
-    refresh_expires_delta=timedelta(
-        days=int(settings.REFRESH_TOKEN_EXPIRE_TIMEDELTA)
-    ),
+    refresh_expires_delta=timedelta(days=int(settings.REFRESH_TOKEN_EXPIRE_TIMEDELTA)),
 )
 
 

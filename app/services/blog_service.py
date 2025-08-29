@@ -8,6 +8,7 @@ from ..utils.aggregate_pipelines import posts_with_author
 from pymongo import DESCENDING
 from bson import ObjectId
 import asyncio  # noqa
+from datetime import datetime, timezone
 
 
 class BlogService:
@@ -32,9 +33,11 @@ class BlogService:
     async def get_all(self, limit: int, offset: int, include_inactive=False):
         # await asyncio.sleep(3)
         total = (
-            await self.collection.count_documents({})
+            await self.collection.count_documents({"deleted": False})
             if include_inactive
-            else await self.collection.count_documents({"is_active": True})
+            else await self.collection.count_documents(
+                {"is_active": True, "deleted": False}
+            )
         )
         pipeline = posts_with_author(
             skip=offset, limit=limit, include_inactive=include_inactive
@@ -55,8 +58,10 @@ class BlogService:
             {"posts": blogs, "limit": limit, "offset": offset, "total": total},
         )
 
-    async def get(self, slug: str):
-        pipeline = posts_with_author(slug=slug, skip=None, limit=None)
+    async def get(self, slug: str = None, include_inactive=False):
+        pipeline = posts_with_author(
+            slug=slug, skip=None, limit=None, include_inactive=include_inactive
+        )
         cursor = await self.collection.aggregate(pipeline)
         blog_list = await cursor.to_list(length=1)
         if not blog_list:
@@ -67,22 +72,25 @@ class BlogService:
             data=serialize_blog(blog_list[0]),
         )
 
-    async def update(self, blog_id: str, blog_update_schema: BlogUpdateSchema):
-        await get_object_or_404(self.collection, "_id", ObjectId(blog_id), "Post")
+    async def update(self, slug: str, blog_update_schema: BlogUpdateSchema):
+        await get_object_or_404(self.collection, "slug", slug, "Post")
         await self.collection.update_one(
-            {"_id": ObjectId(blog_id)}, {"$set": blog_update_schema.model_dump()}
+            {"slug": slug}, {"$set": blog_update_schema.model_dump()}
         )
         return success_response("Post updated successfully", status.HTTP_200_OK)
 
-    async def update_status(self, blog_id: str):
-        await get_object_or_404(self.collection, "_id", ObjectId(blog_id), "Post")
+    async def update_status(self, slug: str):
+        await get_object_or_404(self.collection, "slug", slug, "Post")
         await self.collection.update_one(
-            {"_id": ObjectId(blog_id)},
+            {"slug": slug},
             [{"$set": {"is_active": {"$not": ["$is_active"]}}}],
         )
         return success_response("Post status updated successfully", status.HTTP_200_OK)
 
-    async def delete(self, blog_id: str):
-        await get_object_or_404(self.collection, "_id", ObjectId(blog_id), "Post")
-        await self.collection.delete_one({"_id": ObjectId(blog_id)})
+    async def delete(self, slug: str):
+        await get_object_or_404(self.collection, "slug", slug, "Post")
+        await self.collection.update_one(
+            {"slug": slug},
+            {"$set": {"deleted": True, "deleted_at": datetime.now(timezone.utc)}},
+        )
         return success_response("Post deleted successfully", status.HTTP_200_OK)
